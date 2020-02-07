@@ -12,24 +12,24 @@ import javax.inject.Inject;
  */
 
 public class CartController extends HttpServlet {
-		private static final long serialVersionUID = 1L;
-		private DBConnection dbConnection;
+	private static final long serialVersionUID = 1L;
+	private DBConnection dbConnection;
 
-		@Inject
-    private BookDAO bookDAO;
+	@Inject
+	private BookDAO bookDAO;
 
-    public void init() {
-			dbConnection = new DBConnection();
-			bookDAO = new BookDAO(dbConnection.getConnection());
-    }
+	public void init() {
+		dbConnection = new DBConnection();
+		bookDAO = new BookDAO(dbConnection.getConnection());
+	}
 
-		public void destroy() {
-			dbConnection.disconnect();
-		}
+	public void destroy() {
+		dbConnection.disconnect();
+	}
 
-    public CartController() {
-        super();
-    }
+	public CartController() {
+		super();
+	}
 
 	/**
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
@@ -42,11 +42,14 @@ public class CartController extends HttpServlet {
 		// Do different things depending on the action (or path requested)
 		try {
 			switch(action) {
-				case "/addcart":
-					 addToCart(request, response);
-           break;
-        default:
-           break;
+			case "/addcart":
+				addToCart(request, response);
+				break;
+			case "/delete":
+				deleteFromCart(request, response);
+				break;
+			default:
+				break;
 			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -56,32 +59,39 @@ public class CartController extends HttpServlet {
 		response.sendRedirect("../ShoppingCart.jsp");
 	}
 
-  protected void addToCart(HttpServletRequest request, HttpServletResponse response)
-		throws ServletException, IOException {
-   HttpSession session = request.getSession();
-   String idStr = request.getParameter("id");
-   int id = Integer.parseInt(idStr);
-   String quantityStr = request.getParameter("quantity");
-   int quantity = Integer.parseInt(quantityStr);
+	private void deleteFromCart(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException{
+		HttpSession session = request.getSession();
+		int index = Integer.parseInt(request.getParameter("index"));
+		ShoppingCart shoppingCart = (ShoppingCart) session.getAttribute("cart");
+		shoppingCart.deleteCartItem(index);
+	}
 
-	 // Get the book from the database
-   Book existingBook = bookDAO.getBook(id);
+	protected void addToCart(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+		HttpSession session = request.getSession();
+		String idStr = request.getParameter("id");
+		int id = Integer.parseInt(idStr);
+		String quantityStr = request.getParameter("quantity");
+		int quantity = Integer.parseInt(quantityStr);
 
-	 // Check if a ShoppingCart exists in the Session variable
-	 // If not create one
-   ShoppingCart shoppingCart = null;
-   Object objCartBean = session.getAttribute("cart");
+		// Get the book from the database
+		Book existingBook = bookDAO.getBook(id);
 
-   if(objCartBean!=null) {
-    shoppingCart = (ShoppingCart) objCartBean ;
-   } else {
-    shoppingCart = new ShoppingCart();
-    session.setAttribute("cart", shoppingCart);
-   }
+		// Check if a ShoppingCart exists in the Session variable
+		// If not create one
+		ShoppingCart shoppingCart = null;
+		Object objCartBean = session.getAttribute("cart");
 
-	 // Add this item and quantity to the ShoppingCart
-   shoppingCart.addCartItem(existingBook, quantity);
-  }
+		if(objCartBean!=null) {
+			shoppingCart = (ShoppingCart) objCartBean ;
+		} else {
+			shoppingCart = new ShoppingCart();
+			session.setAttribute("cart", shoppingCart);
+		}
+
+		// Add this item and quantity to the ShoppingCart
+		shoppingCart.addCartItem(existingBook, quantity);
+	}
 
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		doGet(request, response);
